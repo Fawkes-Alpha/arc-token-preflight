@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Arc Token Pre-Flight — a pay-per-call API on Arc mainnet</title>
+<style>
+  :root { --ink:#101418; --dim:#5b6570; --line:#e3e7eb; --acc:#0b5cff; --bg:#fbfcfd; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink);
+         font:16px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; }
+  .wrap { max-width:760px; margin:0 auto; padding:56px 24px 96px; }
+  h1 { font-size:30px; line-height:1.25; margin:0 0 10px; letter-spacing:-.02em; }
+  .sub { color:var(--dim); font-size:18px; margin:0 0 34px; }
+  h2 { font-size:15px; text-transform:uppercase; letter-spacing:.07em; color:var(--dim);
+       margin:40px 0 14px; font-weight:600; }
+  pre { background:#0d1117; color:#d9e0e8; padding:16px 18px; border-radius:8px;
+        overflow-x:auto; font-size:13.5px; line-height:1.6; margin:0 0 14px; }
+  code { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; }
+  p code, li code, td code { background:#eef1f4; padding:1px 5px; border-radius:4px; font-size:14px; }
+  table { border-collapse:collapse; width:100%; font-size:15px; margin:0 0 14px; }
+  th,td { text-align:left; padding:9px 12px; border-bottom:1px solid var(--line); vertical-align:top; }
+  th { color:var(--dim); font-weight:600; width:40%; }
+  .badge { display:inline-block; background:#e8f0ff; color:var(--acc); font-size:13px;
+           font-weight:600; padding:3px 10px; border-radius:20px; margin-bottom:18px; }
+  a { color:var(--acc); }
+  ul { padding-left:22px; margin:0 0 14px; } li { margin:5px 0; }
+  footer { margin-top:56px; padding-top:22px; border-top:1px solid var(--line);
+           color:var(--dim); font-size:14px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <span class="badge">Live on Arc mainnet &middot; chain 5042</span>
+
+  <h1>Arc Token Pre-Flight</h1>
+  <p class="sub">
+    A pay-per-call API that inspects any token contract on Arc mainnet and returns
+    the risk warnings an autonomous agent needs <em>before</em> it trades.
+    No account, no API key. Payment is the authentication.
+  </p>
+
+  <h2>Try it — unpaid call returns the price list</h2>
+  <pre><code>curl -i "/api/kiem-tra?address=0x171A4217B86A807A64eB94757Db6849fb4bDbAA0"</code></pre>
+  <p>
+    Returns <strong>HTTP 402 Payment Required</strong> with a machine-readable
+    <code>accepts</code> array. An x402 client reads it, signs an authorization,
+    and retries. <a href="/api/kiem-tra?address=0x171A4217B86A807A64eB94757Db6849fb4bDbAA0">Open it in the browser →</a>
+  </p>
+
+  <h2>What you get for 0.01 USDC</h2>
+  <ul>
+    <li>Contract type — ERC-20, ERC-721 or ERC-1155, detected via ERC-165</li>
+    <li>Name, symbol, decimals, total supply</li>
+    <li><strong>Risk warnings</strong> for Arc-specific traps</li>
+  </ul>
+  <p>The warnings are the point. Three real ones this catches:</p>
+  <table>
+    <tr>
+      <th>cirBTC has 8 decimals</th>
+      <td>Not 18. Any client that hard-codes 18 misreads every balance by a factor of 10<sup>10</sup>.</td>
+    </tr>
+    <tr>
+      <th>USDC on Arc is a precompile</th>
+      <td>USDC is Arc's native gas currency, exposed through two interfaces that share one balance —
+          native at 18 decimals, ERC-20 at 6. Mixing them is a 10<sup>12</sup> error, and
+          <code>balanceOf()</code> returning 0 does not mean the native balance is 0.</td>
+    </tr>
+    <tr>
+      <th>Address has no bytecode</th>
+      <td>The contract exists on testnet but not on mainnet. The ERC-8004 registries
+          are the live example of this.</td>
+    </tr>
+  </table>
+
+  <h2>How payment works</h2>
+  <table>
+    <tr><th>Protocol</th><td>x402, scheme <code>exact</code></td></tr>
+    <tr><th>Settlement</th><td>Circle Facilitator Service</td></tr>
+    <tr><th>Mechanism</th><td>EIP-3009 <code>TransferWithAuthorization</code> — the buyer signs, no transaction of their own</td></tr>
+    <tr><th>Network</th><td><code>eip155:5042</code> (Arc mainnet)</td></tr>
+    <tr><th>Asset</th><td>USDC <code>0x3600…0000</code></td></tr>
+    <tr><th>Price</th><td>0.01 USDC per call</td></tr>
+    <tr><th>Finality</th><td>Instant — Arc has deterministic finality, so there is no <code>pending</code> state to handle</td></tr>
+  </table>
+  <p>
+    Every successful response carries an <code>X-PAYMENT-RESPONSE</code> header and a
+    <code>transaction</code> hash verifiable on
+    <a href="https://explorer.arc.io" target="_blank" rel="noopener">explorer.arc.io</a>.
+    The report is produced only after settlement returns <code>success: true</code>.
+  </p>
+
+  <h2>Why this is Arc-native</h2>
+  <p>
+    It could not be built this way anywhere else. Arc's instant finality removes the
+    pending-payment state machine. Circle pays the settlement gas, so a 0.01 USDC call
+    is economically possible. And the warnings it returns are drawn from Arc's own
+    EVM differences — the dual-interface USDC precompile above all.
+  </p>
+
+  <footer>
+    Built by <a href="https://x.com/Fawkes_Alpha1" target="_blank" rel="noopener">@Fawkes_Alpha1</a>.
+    Source is public — see the repository linked from the submission.
+  </footer>
+
+</div>
+</body>
+</html>

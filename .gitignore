@@ -1,0 +1,35 @@
+# ===== BI MAT - KHONG BAO GIO COMMIT =====
+.env
+.env.*
+.en
+*.key
+*.pem
+
+# ===== PHU THUOC =====
+node_modules/
+dist/
+.vercel/
+
+# ===== FILE CHUA CHU KY / TRANG THAI CUC BO =====
+# Uy quyen EIP-3009 da ky cua nguoi mua
+uy-quyen.json
+# Seller proof da ky
+proof.txt
+# Payload day du gui len Facilitator (chua chu ky)
+body.json
+# Ma chong tra trung, trang thai cuc bo
+pay-id.txt
+
+# ===== DU LIEU DA MUA TU BEN THU BA =====
+trending.json
+
+# ===== KHAC =====
+*.log
+.DS_Store
+
+.vercel
+.env*
+
+# Ngoai le: file mau KHONG chua bi mat, phai nam trong repo
+# de nguoi khac biet du an can nhung bien nao.
+!.env.example

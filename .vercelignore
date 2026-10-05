@@ -1,0 +1,33 @@
+# Vercel tai CA THU MUC len khi deploy.
+# File nao liet ke o day thi KHONG duoc tai len.
+#
+# Vercel CLI vo hieu hoa .env san, nhung ta ghi lai ro rang:
+# an toan khong nen phu thuoc vao hanh vi mac dinh cua cong cu.
+
+# ===== BI MAT =====
+.env
+.env.*
+.en
+*.key
+*.pem
+
+# ===== CHU KY / TRANG THAI CUC BO - khong can tren server =====
+uy-quyen.json
+proof.txt
+body.json
+pay-id.txt
+
+# ===== DU LIEU DA MUA, 142 KB, khong lien quan den API =====
+trending.json
+
+# ===== SCRIPT CHAY TAY - server khong dung =====
+0-tao-vi.ts
+1-ky-uy-quyen.ts
+2-thanh-toan.ts
+3-doc-trending.ts
+4-thu-doc-contract.ts
+
+# ===== KHAC =====
+node_modules
+.vercel
+*.log
